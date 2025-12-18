@@ -1,3 +1,5 @@
+import { Bottle } from "@/models/Bottle"
+import { Kanster } from "@/models/Kanster"
 import { SprayBottle } from "@/models/Spray_bottle"
 import { useRef, useLayoutEffect } from 'react'
 import * as THREE from 'three'
@@ -26,6 +28,12 @@ export default function ModelRenderer({ modelType, config }) {
   switch (modelType) {
     case 'spray_bottle':
       ModelComponent = SprayBottle
+      break
+    case 'bottle':
+      ModelComponent = Bottle
+      break
+    case 'kanster':
+      ModelComponent = Kanster
       break
     default:
       ModelComponent = SprayBottle

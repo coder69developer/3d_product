@@ -69,7 +69,7 @@ export default function ControlsPanel({ config }) {
       </div>
 
       {/* Brand Text */}
-      <div>
+      {/* <div>
         <label className="block text-sm font-medium mb-2">Brand Name (Text Logo)</label>
         <input
           type="text"
@@ -79,7 +79,7 @@ export default function ControlsPanel({ config }) {
           className="w-full border rounded px-3 py-2"
         />
         <p className="text-xs text-gray-500 mt-1">Used if no logo image is uploaded</p>
-      </div>
+      </div> */}
 
       {/* Visibility Toggles */}
       <div className="flex gap-4">
@@ -92,23 +92,31 @@ export default function ControlsPanel({ config }) {
           Show Label
         </label>
 
-        <label className="flex items-center gap-2">
+        {/* <label className="flex items-center gap-2">
           <input
             type="checkbox"
             checked={showLogo}
             onChange={(e) => setShowLogo(e.target.checked)}
           />
           Show Logo
-        </label>
+        </label> */}
       </div>
 
       {/* Logo Position, Rotation & Scale */}
-      {logoImage && (
+      
         <div className="space-y-2">
           <h3 className="text-sm font-medium">Logo Settings</h3>
 
           {/* Position */}
           <label className="block text-xs">Horizontal (X)</label>
+          {/* <input
+            type="range"
+            min={-Math.PI}
+            max={Math.PI}
+            step={0.01}
+            value={logoRotation}
+            onChange={(e) => setLogoRotation(parseFloat(e.target.value))}
+          /> */}
           <input
             type="range"
             min={-0.5} max={0.5} step={0.01}
@@ -158,7 +166,7 @@ export default function ControlsPanel({ config }) {
             onChange={(e) => setLogoScale([logoScale[0], logoScale[1], parseFloat(e.target.value)])}
           />
         </div>
-      )}
+      
     </div>
   )
 }
