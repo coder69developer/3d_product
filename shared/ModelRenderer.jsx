@@ -1,24 +1,36 @@
+import { Bottle } from "@/models/Bottle"
+import { Container } from "@/models/Container"
+import { Kanster } from "@/models/Kanster"
 import { SprayBottle } from "@/models/Spray_bottle"
-import { useRef, useLayoutEffect } from 'react'
+import { useRef, useLayoutEffect, useState } from 'react'
 import * as THREE from 'three'
 
-function CenteredModel({ children }) {
+function CenteredModel({ children}) {
   const groupRef = useRef()
+  const [scale, setScale] = useState(1)
 
   useLayoutEffect(() => {
     if (!groupRef.current) return
 
+    // Compute bounding box of the model
     const box = new THREE.Box3().setFromObject(groupRef.current)
-    const min = box.min
-    const max = box.max
+    const size = new THREE.Vector3()
+    box.getSize(size)
+    const center = new THREE.Vector3()
+    box.getCenter(center)
 
-    // Calculate the offset needed so base (min.y) sits at 0
-    const offsetY = min.y
+    // Recenter the model at origin
+    groupRef.current.position.x -= center.x
+    groupRef.current.position.y -= box.min.y // keep base at Y=0
+    groupRef.current.position.z -= center.z
 
-    groupRef.current.position.y -= min.y;
+    // Optional: scale model to fit nicely
+    const maxDim = Math.max(size.x, size.y, size.z)
+    const targetSize = 2.5       // adjust depending on your canvas
+    setScale(targetSize / maxDim)
   }, [])
 
-  return <group ref={groupRef}>{children}</group>
+  return <group ref={groupRef} scale={[scale, scale, scale]}>{children}</group>
 }
 
 export default function ModelRenderer({ modelType, config }) {
@@ -26,6 +38,15 @@ export default function ModelRenderer({ modelType, config }) {
   switch (modelType) {
     case 'spray_bottle':
       ModelComponent = SprayBottle
+      break
+    case 'bottle':
+      ModelComponent = Bottle
+      break
+    case 'kanster':
+      ModelComponent = Kanster
+      break
+    case 'container':
+      ModelComponent = Container
       break
     default:
       ModelComponent = SprayBottle
