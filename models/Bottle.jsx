@@ -13,6 +13,8 @@ const MODEL_PATH = '/3d_product/models/bottle.glb';
 
 export function Bottle({
   bodyColor,
+  capColor,
+  singleColorMode,
   labelImage,
   logoImage,
   brandText,
@@ -31,6 +33,7 @@ export function Bottle({
     const bodyRef = useRef()
   
     const bodyMaterial = useBodyMaterial(bodyColor)
+    const capMaterial = useBodyMaterial(capColor);
   
     const labelMaterial = useMemo(() => {
       const mat = nodes.Cylinder.material.clone()
@@ -69,7 +72,7 @@ export function Bottle({
   return (
     <group {...props} dispose={null}>
       <mesh ref={bodyRef} geometry={nodes.Cylinder.geometry} material={bodyMaterial} position={[0, 1.923, 0]} scale={[0.709, 1.244, 0.709]} />
-      <mesh geometry={nodes.caps.geometry} material={bodyMaterial} position={[0.001, 4.727, 0]} scale={[-0.3, -0.19, -0.3]} />
+      <mesh geometry={nodes.caps.geometry} material={singleColorMode ? bodyMaterial : capMaterial} position={[0.001, 4.727, 0]} scale={[-0.3, -0.19, -0.3]} />
       {/* <mesh geometry={nodes.label.geometry} material={nodes.label.material} position={[0, 1.42, 0]} scale={0.726} /> */}
 
       {labelVisible && (
