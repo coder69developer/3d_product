@@ -4,6 +4,10 @@ export default function ControlsPanel({ config }) {
   const {
     bodyColor,
     setBodyColor,
+    capColor,
+    setCapColor,
+    singleColorMode,
+    setSingleColorMode,
     labelImage,
     setLabelImage,
     logoImage,
@@ -24,7 +28,6 @@ export default function ControlsPanel({ config }) {
     setLogoScale
   } = config
 
-  /* ---------------- File Upload ---------------- */
   const handleImageUpload = (file, setter) => {
     if (!file) return
     const url = URL.createObjectURL(file)
@@ -32,141 +35,115 @@ export default function ControlsPanel({ config }) {
   }
 
   return (
-    <div className="p-6 border-l space-y-6 overflow-y-auto">
-      <h2 className="text-xl font-semibold">Product Customization</h2>
+    <div className="p-6 border-l space-y-6 overflow-y-auto bg-gray-900 h-full text-gray-100">
+      <h2 className="text-2xl font-semibold mb-4 text-white">Product Customization</h2>
 
       {/* Body Color */}
-      <div>
-        <label className="block text-sm font-medium mb-2">Body Color</label>
-        <input
-          type="color"
-          value={bodyColor}
-          onChange={(e) => setBodyColor(e.target.value)}
-          className="w-16 h-10 cursor-pointer"
-        />
-      </div>
+      <Card className="p-4">
+        <div className="flex items-center justify-between mb-2">
+          <label className="block text-sm font-medium text-gray-200">Colors</label>
+          <label className="flex items-center gap-2 text-sm text-gray-200">
+            <input
+              type="checkbox"
+              checked={singleColorMode}
+              onChange={(e) => setSingleColorMode(e.target.checked)}
+            />
+            Single Color
+          </label>
+        </div>
+
+        <div className="flex gap-4">
+          {/* Body Color */}
+          <div className="flex flex-col items-center">
+            <span className="text-xs text-gray-200 mb-1">Body</span>
+            <input
+              type="color"
+              value={singleColorMode ? bodyColor : bodyColor}
+              onChange={(e) => {
+                const color = e.target.value
+                setBodyColor(color)
+                if (singleColorMode) setCapColor(color)
+              }}
+              className="w-16 h-10 cursor-pointer rounded border border-gray-700"
+            />
+          </div>
+
+          {/* Cap Color */}
+          <div className="flex flex-col items-center">
+            <span className="text-xs text-gray-200 mb-1">Cap</span>
+            <input
+              type="color"
+              value={singleColorMode ? bodyColor : capColor}
+              onChange={(e) => setCapColor(e.target.value)}
+              className="w-16 h-10 cursor-pointer rounded border border-gray-700"
+              disabled={singleColorMode}
+            />
+          </div>
+        </div>
+      </Card>
 
       {/* Label Upload */}
-      <div>
-        <label className="block text-sm font-medium mb-2">Label Image</label>
+      <Card>
+        <label className="block text-sm font-medium text-gray-200">Label Image</label>
         <input
           type="file"
           accept="image/*"
           onChange={(e) => handleImageUpload(e.target.files[0], setLabelImage)}
+          className="block w-full text-sm text-gray-300 cursor-pointer"
         />
-        {labelImage && <p className="text-xs text-green-600 mt-1">Label applied</p>}
-      </div>
+        {labelImage && <p className="text-xs text-green-400 mt-1">Label applied</p>}
+      </Card>
 
       {/* Logo Upload */}
-      <div>
-        <label className="block text-sm font-medium mb-2">Logo Image</label>
+      <Card>
+        <label className="block text-sm font-medium text-gray-200">Logo Image</label>
         <input
           type="file"
           accept="image/*"
           onChange={(e) => handleImageUpload(e.target.files[0], setLogoImage)}
+          className="block w-full text-sm text-gray-300 cursor-pointer"
         />
-        {logoImage && <p className="text-xs text-green-600 mt-1">Logo applied</p>}
-      </div>
+        {logoImage && <p className="text-xs text-green-400 mt-1">Logo applied</p>}
+      </Card>
 
-      {/* Brand Text */}
-      {/* <div>
-        <label className="block text-sm font-medium mb-2">Brand Name (Text Logo)</label>
-        <input
-          type="text"
-          value={brandText}
-          onChange={(e) => setBrandText(e.target.value)}
-          placeholder="Enter brand name"
-          className="w-full border rounded px-3 py-2"
-        />
-        <p className="text-xs text-gray-500 mt-1">Used if no logo image is uploaded</p>
-      </div> */}
+      {/* Logo Settings */}
+      <Card>
+        <h3 className="text-sm font-medium text-gray-200 mb-2">Logo Settings</h3>
 
-      {/* Visibility Toggles */}
-      <div className="flex gap-4">
-        <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={showLabel}
-            onChange={(e) => setShowLabel(e.target.checked)}
-          />
-          Show Label
-        </label>
+        <Slider label="Horizontal (X)" min={-0.5} max={0.5} step={0.01} value={logoX} onChange={setLogoX} dark />
+        <Slider label="Vertical (Y)" min={-0.5} max={3} step={0.01} value={logoY} onChange={setLogoY} dark />
+        <Slider label="Rotation (Y-axis)" min={-Math.PI} max={Math.PI} step={0.01} value={logoRotation} onChange={setLogoRotation} dark />
+        <Slider label="Scale X" min={0.1} max={3} step={0.01} value={logoScale[0]} onChange={(v) => setLogoScale([v, logoScale[1], logoScale[2]])} dark />
+        <Slider label="Scale Y" min={0.1} max={3} step={0.01} value={logoScale[1]} onChange={(v) => setLogoScale([logoScale[0], v, logoScale[2]])} dark />
+        <Slider label="Scale Z" min={0.1} max={3} step={0.01} value={logoScale[2]} onChange={(v) => setLogoScale([logoScale[0], logoScale[1], v])} dark />
+      </Card>
+    </div>
+  )
+}
 
-        {/* <label className="flex items-center gap-2">
-          <input
-            type="checkbox"
-            checked={showLogo}
-            onChange={(e) => setShowLogo(e.target.checked)}
-          />
-          Show Logo
-        </label> */}
-      </div>
+/** Card wrapper with hover lift & shadow */
+function Card({ children }) {
+  return (
+    <div className="p-4 bg-gray-800 rounded-xl shadow-md hover:shadow-xl hover:-translate-y-1 transition-all duration-200 space-y-2">
+      {children}
+    </div>
+  )
+}
 
-      {/* Logo Position, Rotation & Scale */}
-      
-        <div className="space-y-2">
-          <h3 className="text-sm font-medium">Logo Settings</h3>
-
-          {/* Position */}
-          <label className="block text-xs">Horizontal (X)</label>
-          {/* <input
-            type="range"
-            min={-Math.PI}
-            max={Math.PI}
-            step={0.01}
-            value={logoRotation}
-            onChange={(e) => setLogoRotation(parseFloat(e.target.value))}
-          /> */}
-          <input
-            type="range"
-            min={-0.5} max={0.5} step={0.01}
-            value={logoX}
-            onChange={(e) => setLogoX(parseFloat(e.target.value))}
-          />
-
-          <label className="block text-xs">Vertical (Y)</label>
-          <input
-            type="range"
-            min={-0.5} max={3.0} step={0.01}
-            value={logoY}
-            onChange={(e) => setLogoY(parseFloat(e.target.value))}
-          />
-
-          {/* Rotation */}
-          <label className="block text-xs">Rotation (Y-axis)</label>
-          <input
-            type="range"
-            min={-Math.PI} max={Math.PI} step={0.01}
-            value={logoRotation}
-            onChange={(e) => setLogoRotation(parseFloat(e.target.value))}
-          />
-
-          {/* Scale */}
-          <label className="block text-xs">Scale X</label>
-          <input
-            type="range"
-            min={0.1} max={3} step={0.01}
-            value={logoScale[0]}
-            onChange={(e) => setLogoScale([parseFloat(e.target.value), logoScale[1], logoScale[2]])}
-          />
-
-          <label className="block text-xs">Scale Y</label>
-          <input
-            type="range"
-            min={0.1} max={3} step={0.01}
-            value={logoScale[1]}
-            onChange={(e) => setLogoScale([logoScale[0], parseFloat(e.target.value), logoScale[2]])}
-          />
-
-          <label className="block text-xs">Scale Z</label>
-          <input
-            type="range"
-            min={0.1} max={3} step={0.01}
-            value={logoScale[2]}
-            onChange={(e) => setLogoScale([logoScale[0], logoScale[1], parseFloat(e.target.value)])}
-          />
-        </div>
-      
+/** Slider Component with dark mode */
+function Slider({ label, min, max, step, value, onChange, dark }) {
+  return (
+    <div className="space-y-1">
+      <label className={`block text-xs ${dark ? 'text-gray-200' : 'text-gray-700'}`}>{label}</label>
+      <input
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(parseFloat(e.target.value))}
+        className={`w-full cursor-pointer ${dark ? 'accent-blue-500 hover:accent-blue-400' : 'accent-blue-500 hover:accent-blue-600'}`}
+      />
     </div>
   )
 }

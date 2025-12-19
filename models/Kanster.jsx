@@ -12,7 +12,9 @@ import * as THREE from 'three'
 const MODEL_PATH = '/3d_product/models/kanster.glb';
 
 export function Kanster({
-   bodyColor,
+  bodyColor,
+  capColor,
+  singleColorMode,
   labelImage,
   logoImage,
   brandText,
@@ -30,7 +32,9 @@ export function Kanster({
   const labelRef = useRef()
   const bodyRef = useRef()
 
-  const bodyMaterial = useBodyMaterial(bodyColor)
+  const bodyMaterial = useBodyMaterial(bodyColor);
+  const capMaterial = useBodyMaterial(capColor);
+
 
   const labelMaterial = useMemo(() => {
     const mat = nodes.body.material.clone()
@@ -69,7 +73,7 @@ export function Kanster({
   return (
     <group {...props} dispose={null}>
       <mesh ref={bodyRef} geometry={nodes.body.geometry} material={bodyMaterial} position={[0.073, 1.935, 0]} scale={1.342} />
-      <mesh geometry={nodes.caps.geometry} material={bodyMaterial} position={[0.083, 4.36, -0.006]} scale={[1.332, 0.391, 1.332]} />
+      <mesh geometry={nodes.caps.geometry} material={singleColorMode ? bodyMaterial : capMaterial} position={[0.083, 4.36, -0.006]} scale={[1.332, 0.391, 1.332]} />
       {/* <mesh geometry={nodes.label.geometry} material={nodes.label.material} position={[0.072, 2.093, -0.032]} scale={[1.365, 1.472, 1.397]} /> */}
 
       {labelVisible && (

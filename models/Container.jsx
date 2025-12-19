@@ -15,6 +15,8 @@ const MODEL_PATH = '/3d_product/models/container.glb';
 
 export function Container({
   bodyColor,
+  capColor,
+  singleColorMode,
   labelImage,
   logoImage,
   brandText,
@@ -31,7 +33,9 @@ export function Container({
   const labelRef = useRef()
   const bodyRef = useRef()
 
-  const bodyMaterial = useBodyMaterial(bodyColor)
+  const bodyMaterial = useBodyMaterial(bodyColor);
+  const capMaterial = useBodyMaterial(capColor);
+
 
   const labelMaterial = useMemo(() => {
     const mat = nodes.label.material.clone()
@@ -71,7 +75,7 @@ export function Container({
   return (
     <group {...props} dispose={null}>
       <mesh ref={bodyRef} geometry={nodes.Cube.geometry} material={bodyMaterial} position={[0, 2.351, 0]} scale={[1.854, 2.305, 1.422]} />
-      <mesh geometry={nodes.caps.geometry} material={bodyMaterial} position={[-1.409, 4.158, 0.124]} scale={[-0.389, -0.142, -0.389]} />
+      <mesh geometry={nodes.caps.geometry} material={singleColorMode ? bodyMaterial : capMaterial} position={[-1.409, 4.158, 0.124]} scale={[-0.389, -0.142, -0.389]} />
       {/* <mesh geometry={nodes.label.geometry} material={nodes.label.material} position={[0, 2.291, 1.497]} rotation={[Math.PI / 2, 0, 0]} scale={1.715} /> */}
 
       {labelVisible && (

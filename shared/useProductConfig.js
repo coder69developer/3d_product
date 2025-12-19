@@ -3,6 +3,8 @@ import { useState } from 'react'
 
 export default function useProductConfig() {
   const [bodyColor, setBodyColor] = useState('#ffffff')
+  const [capColor, setCapColor] = useState('#120909')
+  const [singleColorMode, setSingleColorMode]= useState(false);
   const [labelImage, setLabelImage] = useState(null)
   const [logoImage, setLogoImage] = useState(null)
   const [brandText, setBrandText] = useState('')
@@ -18,6 +20,10 @@ export default function useProductConfig() {
   return {
     bodyColor,
     setBodyColor,
+    capColor,
+    setCapColor,
+    singleColorMode,
+    setSingleColorMode,
     labelImage,
     setLabelImage,
     logoImage,

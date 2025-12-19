@@ -8,6 +8,8 @@ const MODEL_PATH = '/3d_product/models/spray_bottle_v16.glb'
 
 export function SprayBottle({
   bodyColor,
+  capColor,
+  singleColorMode,
   labelImage,
   logoImage,
   brandText,
@@ -25,7 +27,9 @@ export function SprayBottle({
   const labelRef = useRef()
   const bodyRef = useRef()
 
-  const bodyMaterial = useBodyMaterial(bodyColor)
+  const bodyMaterial = useBodyMaterial(bodyColor);
+  const capMaterial = useBodyMaterial(capColor);
+
 
   const labelMaterial = useMemo(() => {
     const mat = materials.Material.clone()
@@ -64,10 +68,10 @@ export function SprayBottle({
   return (
     <group {...props} scale={scale} dispose={null}>
       {/* Body */}
-      <mesh geometry={nodes.spray_nogal_back.geometry} material={bodyMaterial} position={[-0.313,5.033,-0.001]} scale={[0.547,0.547,0.177]} />
-      <mesh geometry={nodes.spray_handle.geometry} material={bodyMaterial} position={[-0.74,4.299,0.072]} rotation={[Math.PI/2,-0.423,0]} scale={[0.115,0.186,0.186]} />
-      <mesh geometry={nodes.spray_nogel.geometry} material={bodyMaterial} position={[-0.875,4.901,-0.001]} rotation={[0,0,-Math.PI/2]} scale={[0.143,0.135,0.176]} />
-      <mesh geometry={nodes.cap.geometry} material={bodyMaterial} position={[0.017,4.038,0]} scale={0.313} />
+      <mesh geometry={nodes.spray_nogal_back.geometry} material={singleColorMode ? bodyMaterial : capMaterial} position={[-0.313,5.033,-0.001]} scale={[0.547,0.547,0.177]} />
+      <mesh geometry={nodes.spray_handle.geometry} material={singleColorMode ? bodyMaterial : capMaterial} position={[-0.74,4.299,0.072]} rotation={[Math.PI/2,-0.423,0]} scale={[0.115,0.186,0.186]} />
+      <mesh geometry={nodes.spray_nogel.geometry} material={singleColorMode ? bodyMaterial : capMaterial} position={[-0.875,4.901,-0.001]} rotation={[0,0,-Math.PI/2]} scale={[0.143,0.135,0.176]} />
+      <mesh geometry={nodes.cap.geometry} material={singleColorMode ? bodyMaterial : capMaterial} position={[0.017,4.038,0]} scale={0.313} />
       <mesh ref={bodyRef} geometry={nodes.bottle.geometry} material={bodyMaterial} position={[0.017,2.07,0]} scale={[0.62,1.241,0.62]} />
 
       {/* Label */}

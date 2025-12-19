@@ -56,6 +56,8 @@ export default function ModelRenderer({ modelType, config }) {
     <CenteredModel>
       <ModelComponent
         bodyColor={config.bodyColor}
+        capColor={config.capColor}
+        singleColorMode={config.singleColorMode}
         labelVisible={config.showLabel}
         logoVisible={config.showLogo}
         labelImage={config.labelImage}
