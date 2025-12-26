@@ -3,7 +3,7 @@ import Link from "next/link";
 export default function Home() {
   const models = ['bottle', 'spray-bottle', 'container', 'kanster']
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-100 space-y-6">
+    <div className="min-h-screen m-auto flex flex-col items-center justify-center bg-gray-100 space-y-6">
       <h1 className="text-3xl font-bold text-gray-800">3D Product Configurator</h1>
       <p className="text-gray-600">Choose a model to start customizing:</p>
 

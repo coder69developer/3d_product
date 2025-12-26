@@ -1,9 +1,10 @@
 /** @type {import('next').NextConfig} */
-const isProd = process.env.NODE_ENV === 'production';
+const repoName = process.env.NODE_ENV === 'production' ? '/3d_product': '';
 
-const nextConfig = {             // static HTML export
-  basePath: isProd ? '/3d_product' : '', // prefix all routes
-  assetPrefix: isProd ? '/3d_product/' : '', // prefix _next/static assets
+const nextConfig = {
+  output: 'export',             // static HTML export
+  basePath: repoName, // prefix all routes
+  assetPrefix: repoName, // prefix _next/static assets
   
   images: {
     unoptimized: true

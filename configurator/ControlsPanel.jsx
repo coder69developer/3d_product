@@ -3,9 +3,10 @@ import Slider from "./Slider"
 import ColorPicker from "./ColorPicker"
 import ImageUploader from "./ImageUploader"
 import Switch from "./Switch"
+import { useState } from "react"
 
 
-export default function ControlsPanel({ config }) {
+export default function ControlsPanel({ config, renderer, scene, camera }) {
   const {
     bodyColor,
     setBodyColor,
@@ -27,10 +28,37 @@ export default function ControlsPanel({ config }) {
     setLogoScale
   } = config
 
+  const [screenshotData, setScreenshotData] = useState(null)
+
   const handleImageUpload = (file, setter) => {
     if (!file) return
     const url = URL.createObjectURL(file)
     setter(url)
+  }
+
+  /** Screenshot functions */
+  const captureScreenshot = () => {
+    if (!renderer || !scene || !camera) return
+    renderer.render(scene, camera)
+    const img = renderer.domElement.toDataURL("image/png")
+    setScreenshotData(img)
+  }
+
+  const downloadScreenshot = () => {
+    if (!screenshotData) return
+    const link = document.createElement("a")
+    link.href = screenshotData
+    link.download = "3d-model.png"
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+  }
+
+  const openScreenshotInNewWindow = () => {
+    if (!screenshotData) return
+    const newWindow = window.open()
+    newWindow.document.write(`<img src="${screenshotData}" />`)
+    newWindow.document.close()
   }
 
   return (
@@ -91,6 +119,33 @@ export default function ControlsPanel({ config }) {
         <Slider label="Scale Y" min={0.1} max={3} step={0.01} value={logoScale[1]} onChange={(v) => setLogoScale([logoScale[0], v, logoScale[2]])} />
         <Slider label="Scale Z" min={0.1} max={3} step={0.01} value={logoScale[2]} onChange={(v) => setLogoScale([logoScale[0], logoScale[1], v])} />
       </Card>
+
+      {/* --- NEW Screenshot / Export Card --- */}
+      <Card>
+        <h3 className="h6 mb-2">Export Options</h3>
+        <div className="d-flex flex-column gap-2">
+          <button className="btn btn-primary" onClick={captureScreenshot}>
+            📸 Capture Screenshot
+          </button>
+
+          <button
+            className="btn btn-secondary"
+            onClick={downloadScreenshot}
+            disabled={!screenshotData}
+          >
+            💾 Download Image
+          </button>
+
+          <button
+            className="btn btn-secondary"
+            onClick={openScreenshotInNewWindow}
+            disabled={!screenshotData}
+          >
+            🖨️ Open in New Window
+          </button>
+        </div>
+      </Card>
+
     </div>
   )
 }
