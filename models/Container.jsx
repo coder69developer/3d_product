@@ -11,7 +11,7 @@ import SimpleLogoDecal from '@/shared/SimpleLogoDecal';
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
-const MODEL_PATH = `${basePath}/3d_product/models/container.glb`;
+const MODEL_PATH = `${basePath}/models/container.glb`;
 
 export function Container({
   bodyColor,

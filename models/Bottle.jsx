@@ -11,7 +11,7 @@ import * as THREE from 'three'
 
 const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
-const MODEL_PATH = `${basePath}/3d_product/models/bottle.glb`;
+const MODEL_PATH = `${basePath}/models/bottle.glb`;
 
 export function Bottle({
   bodyColor,
