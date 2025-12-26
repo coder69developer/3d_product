@@ -9,7 +9,6 @@ const COMPANY_LOGO_URL = '/hotrega.svg'
 
 export default function ConfiguratorLayout({ modelType }) {
   const config = useProductConfig()
-
   return (
     <div className="container-fluid vh-100 p-0">
       <div className="row g-0 h-100">

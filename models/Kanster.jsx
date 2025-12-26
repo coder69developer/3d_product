@@ -9,7 +9,9 @@ import { useBodyMaterial } from '@/shared/useBodyMaterial';
 import CylindricalLogoDecal from '@/shared/CylindricalLogoDecal';
 import * as THREE from 'three'
 
-const MODEL_PATH = '/3d_product/models/kanster.glb';
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+
+const MODEL_PATH = `${basePath}/3d_product/models/kanster.glb`;
 
 export function Kanster({
   bodyColor,

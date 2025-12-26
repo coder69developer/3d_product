@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "deploy": "gh-pages -d out"
+    "export": "next export",
+    "predeploy": "npm run build && npm run export && touch out/.nojekyll",
+    "deploy": "gh-pages -d out -b gh-pages"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.7",
