@@ -4,8 +4,9 @@ import { useBodyMaterial } from '@/shared/useBodyMaterial'
 import CylindricalLogoDecal from '@/shared/CylindricalLogoDecal'
 import * as THREE from 'three'
 
-const MODEL_PATH = '/3d_product/models/spray_bottle_v16.glb'
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
 
+const MODEL_PATH = `${basePath}/3d_product/models/spray_bottle.glb`;
 export function SprayBottle({
   bodyColor,
   capColor,

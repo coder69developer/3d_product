@@ -7,11 +7,11 @@ import {useRef, useMemo, useEffect} from 'react'
 import { useGLTF } from '@react-three/drei'
 import * as THREE from 'three'
 import { useBodyMaterial } from '@/shared/useBodyMaterial';
-import { useModelTexture } from '@/shared/useModelTextures';
-import CylindricalLogoDecal from '@/shared/CylindricalLogoDecal';
 import SimpleLogoDecal from '@/shared/SimpleLogoDecal';
 
-const MODEL_PATH = '/3d_product/models/container.glb';
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+
+const MODEL_PATH = `${basePath}/3d_product/models/container.glb`;
 
 export function Container({
   bodyColor,

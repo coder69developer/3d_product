@@ -52,6 +52,7 @@ export default function ModelRenderer({ modelType, config }) {
       ModelComponent = SprayBottle
   }
 
+
   return (
     <CenteredModel>
       <ModelComponent
