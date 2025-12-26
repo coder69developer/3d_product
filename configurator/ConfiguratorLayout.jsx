@@ -5,8 +5,6 @@ import useProductConfig from '../shared/useProductConfig'
 import ControlsPanel from './ControlsPanel'
 import ViewerCanvas from '@/components/canvas/ViewerCanvas'
 
-const COMPANY_LOGO_URL = '/hotrega.svg'
-
 export default function ConfiguratorLayout({ modelType }) {
   const config = useProductConfig()
   return (
