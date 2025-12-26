@@ -53,6 +53,8 @@ jobs:
         with:
           node-version: "20"
           cache: ${{ steps.detect-package-manager.outputs.manager }}
+      - name: Set base path
+        run: echo "NEXT_PUBLIC_BASE_PATH=/3d_product" >> $GITHUB_ENV
       - name: Setup Pages
         uses: actions/configure-pages@v5
         # with:
