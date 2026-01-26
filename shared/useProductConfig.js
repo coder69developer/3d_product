@@ -1,7 +1,7 @@
 'use client'
 import { useState } from 'react'
 
-export default function useProductConfig() {
+export default function useProductConfig(customLogoY) {
   const [bodyColor, setBodyColor] = useState('#ffffff')
   const [capColor, setCapColor] = useState('#120909')
   const [singleColorMode, setSingleColorMode]= useState(false);
@@ -13,7 +13,7 @@ export default function useProductConfig() {
 
   // NEW: decal position and rotation
   const [logoX, setLogoX] = useState(0)          // normalized -0.5 to 0.5
-  const [logoY, setLogoY] = useState(0)          // normalized -0.5 to 0.5
+  const [logoY, setLogoY] = useState(customLogoY)          // normalized -0.5 to 0.5
   const [logoRotation, setLogoRotation] = useState(0) // radians
   const [logoScale, setLogoScale] = useState([1, 0.75, 1.35]) // radians
 

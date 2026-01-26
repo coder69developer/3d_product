@@ -6,8 +6,8 @@ import ControlsPanel from './ControlsPanel'
 import ViewerCanvas from '@/components/canvas/ViewerCanvas'
 import { useState } from 'react'
 
-export default function ConfiguratorLayout({ modelType }) {
-  const config = useProductConfig()
+export default function ConfiguratorLayout({ modelType, logoStartPosition }) {
+  const config = useProductConfig(logoStartPosition)
   const [threeRefs, setThreeRefs] = useState({ renderer: null, scene: null, camera: null })
 
   return (
