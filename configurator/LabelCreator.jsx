@@ -21,8 +21,6 @@ export default function LabelCreator({ onApplyLabel, onSaveLabel, showSaveButton
   const [previewLabel, setPreviewLabel] = useState('')
   const [logoPosition, setLogoPosition] = useState({ x: 0.78, y: 0.03 })
   const [logoScale, setLogoScale] = useState(1)
-  const [textOffsetX, setTextOffsetX] = useState(0)
-  const [textOffsetY, setTextOffsetY] = useState(0)
 
   const dragContainerRef = useRef(null)
   const detailList = useMemo(() => details.split('\n').map((line) => line.trim()).filter(Boolean), [details])
@@ -95,30 +93,44 @@ export default function LabelCreator({ onApplyLabel, onSaveLabel, showSaveButton
     const logoRight = logoBoxX + logoBoxSize
     const logoBottom = logoBoxY + logoBoxSize
 
-    const baseTextX = 70 + textOffsetX
-    let effectiveTextX = baseTextX
+    const defaultTextX = 70
+    const textRightLimit = 980
+    const logoIntersectsTextBand = logoUrl && logoBoxY < 620 && logoBottom > 90
+
+    let effectiveTextX = defaultTextX
     let productMaxWidth = 670
     let descriptionMaxWidth = 880
+    let textYOffset = 0
 
-    const topTextBandOverlapsLogo = logoBoxY < 620 && logoBottom > 90
-    if (logoUrl && topTextBandOverlapsLogo && logoRight > baseTextX && logoBoxX < baseTextX + descriptionMaxWidth) {
-      effectiveTextX = Math.max(baseTextX, logoRight + 30)
-      productMaxWidth = Math.max(320, 980 - effectiveTextX)
-      descriptionMaxWidth = Math.max(360, 980 - effectiveTextX)
+    if (logoIntersectsTextBand) {
+      const spaceLeftOfLogo = logoBoxX - defaultTextX - 20
+      const spaceRightOfLogo = textRightLimit - (logoRight + 20)
+
+      if (spaceLeftOfLogo >= 380) {
+        effectiveTextX = defaultTextX
+        productMaxWidth = Math.min(670, spaceLeftOfLogo)
+        descriptionMaxWidth = Math.min(880, spaceLeftOfLogo)
+      } else if (spaceRightOfLogo >= 380) {
+        effectiveTextX = logoRight + 20
+        productMaxWidth = Math.min(670, spaceRightOfLogo)
+        descriptionMaxWidth = Math.min(880, spaceRightOfLogo)
+      } else {
+        textYOffset = Math.max(0, logoBottom - 80)
+      }
     }
 
-    const detailBaseY = 840 + textOffsetY
+    const detailBaseY = 840 + textYOffset
     const detailUnsafe = logoUrl && logoBoxY < 1024 && logoBottom > detailBaseY - 50
     const detailStartY = detailUnsafe ? logoBoxY - 70 : detailBaseY
 
     const drawText = () => {
       ctx.fillStyle = textColor
       ctx.font = '700 74px Inter, Arial, sans-serif'
-      ctx.fillText(companyName.toUpperCase(), effectiveTextX, 130 + textOffsetY)
+      ctx.fillText(companyName.toUpperCase(), effectiveTextX, 130 + textYOffset)
       ctx.font = '800 66px Inter, Arial, sans-serif'
-      wrapText(ctx, productName, effectiveTextX, 345 + textOffsetY, productMaxWidth, 76, 2)
+      wrapText(ctx, productName, effectiveTextX, 345 + textYOffset, productMaxWidth, 76, 2)
       ctx.font = '400 36px Inter, Arial, sans-serif'
-      wrapText(ctx, description, effectiveTextX, 470 + textOffsetY, descriptionMaxWidth, 46, 4)
+      wrapText(ctx, description, effectiveTextX, 470 + textYOffset, descriptionMaxWidth, 46, 4)
       ctx.font = '600 32px Inter, Arial, sans-serif'
       detailList.forEach((item, index) => ctx.fillText(`• ${item}`, effectiveTextX, detailStartY + index * 52))
       return canvas.toDataURL('image/png')
@@ -162,8 +174,6 @@ export default function LabelCreator({ onApplyLabel, onSaveLabel, showSaveButton
       details: detailList,
       logoPosition,
       logoScale,
-      textOffsetX,
-      textOffsetY,
       createdAt: new Date().toISOString(),
     })
   }
@@ -181,15 +191,6 @@ export default function LabelCreator({ onApplyLabel, onSaveLabel, showSaveButton
         <label className="form-label mb-0 small">Accent <input type="color" className="form-control form-control-color form-control-sm" value={accentColor} onChange={(e) => setAccentColor(e.target.value)} /></label>
         <label className="form-label mb-0 small">Text <input type="color" className="form-control form-control-color form-control-sm" value={textColor} onChange={(e) => setTextColor(e.target.value)} /></label>
       </div>
-
-      <label className="form-label small mb-0">
-        Text Horizontal Offset ({textOffsetX}px)
-        <input type="range" min={-40} max={380} step={10} value={textOffsetX} className="form-range" onChange={(event) => setTextOffsetX(Number(event.target.value))} />
-      </label>
-      <label className="form-label small mb-0">
-        Text Vertical Offset ({textOffsetY}px)
-        <input type="range" min={-120} max={120} step={10} value={textOffsetY} className="form-range" onChange={(event) => setTextOffsetY(Number(event.target.value))} />
-      </label>
 
       <input type="file" accept="image/*" className="form-control form-control-sm" onChange={(e) => handleLogoUpload(e.target.files?.[0])} />
 
