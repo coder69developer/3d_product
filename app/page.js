@@ -18,6 +18,13 @@ export default function Home() {
           </Link>
         ))}
       </div>
+
+      <Link
+        href="/label-creator"
+        className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800 transition"
+      >
+        Open Label Studio
+      </Link>
     </div>
   );
 }
