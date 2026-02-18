@@ -5,7 +5,9 @@ import { useMemo, useRef, useState } from 'react'
 
 const DEFAULT_DETAILS = ['Powerful cleaning action', 'Eco-friendly formula', '1L / 33.8 fl oz']
 const PREVIEW_SIZE = 280
-const PREVIEW_LOGO_SIZE = 64
+const PREVIEW_LOGO_BASE_SIZE = 64
+const LOGO_BOX_BASE_SIZE = 200
+const LOGO_IMAGE_INSET = 5
 
 export default function LabelCreator({ onApplyLabel, onSaveLabel, showSaveButton = false }) {
   const [companyName, setCompanyName] = useState('CleanCo')
@@ -18,21 +20,29 @@ export default function LabelCreator({ onApplyLabel, onSaveLabel, showSaveButton
   const [logoUrl, setLogoUrl] = useState('')
   const [previewLabel, setPreviewLabel] = useState('')
   const [logoPosition, setLogoPosition] = useState({ x: 0.78, y: 0.03 })
+  const [logoScale, setLogoScale] = useState(1)
 
   const dragContainerRef = useRef(null)
   const detailList = useMemo(() => details.split('\n').map((line) => line.trim()).filter(Boolean), [details])
 
+  const logoPreviewSize = PREVIEW_LOGO_BASE_SIZE * logoScale
+
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value))
+
+  const maxLogoPosition = (size, containerSize) => 1 - size / containerSize
+
+  const clampLogoPosition = (position, size, containerSize) => ({
+    x: clamp(position.x, 0, maxLogoPosition(size, containerSize)),
+    y: clamp(position.y, 0, maxLogoPosition(size, containerSize)),
+  })
 
   const updateLogoPositionFromPointer = (clientX, clientY) => {
     if (!dragContainerRef.current) return
     const rect = dragContainerRef.current.getBoundingClientRect()
-    const px = (clientX - rect.left - PREVIEW_LOGO_SIZE / 2) / rect.width
-    const py = (clientY - rect.top - PREVIEW_LOGO_SIZE / 2) / rect.height
-    setLogoPosition({
-      x: clamp(px, 0, 1 - PREVIEW_LOGO_SIZE / PREVIEW_SIZE),
-      y: clamp(py, 0, 1 - PREVIEW_LOGO_SIZE / PREVIEW_SIZE),
-    })
+    const px = (clientX - rect.left - logoPreviewSize / 2) / rect.width
+    const py = (clientY - rect.top - logoPreviewSize / 2) / rect.height
+
+    setLogoPosition(clampLogoPosition({ x: px, y: py }, logoPreviewSize, PREVIEW_SIZE))
   }
 
   const handleLogoUpload = (file) => {
@@ -95,14 +105,14 @@ export default function LabelCreator({ onApplyLabel, onSaveLabel, showSaveButton
     return new Promise((resolve) => {
       const logoImage = document.createElement('img')
       logoImage.onload = () => {
-        const boxSize = 200
-        const size = 190
+        const boxSize = LOGO_BOX_BASE_SIZE * logoScale
+        const size = boxSize - LOGO_IMAGE_INSET * 2
         const boxX = logoPosition.x * canvas.width
         const boxY = logoPosition.y * canvas.height
 
         ctx.fillStyle = 'rgba(255,255,255,0.12)'
         ctx.fillRect(boxX, boxY, boxSize, boxSize)
-        ctx.drawImage(logoImage, boxX + 5, boxY + 5, size, size)
+        ctx.drawImage(logoImage, boxX + LOGO_IMAGE_INSET, boxY + LOGO_IMAGE_INSET, size, size)
         resolve(drawText())
       }
       logoImage.src = logoUrl
@@ -129,6 +139,7 @@ export default function LabelCreator({ onApplyLabel, onSaveLabel, showSaveButton
       description,
       details: detailList,
       logoPosition,
+      logoScale,
       createdAt: new Date().toISOString(),
     })
   }
@@ -150,35 +161,55 @@ export default function LabelCreator({ onApplyLabel, onSaveLabel, showSaveButton
       <input type="file" accept="image/*" className="form-control form-control-sm" onChange={(e) => handleLogoUpload(e.target.files?.[0])} />
 
       {logoUrl && (
-        <div>
-          <small className="text-muted d-block mb-1">Drag and drop logo position</small>
-          <div
-            ref={dragContainerRef}
-            className="position-relative border rounded"
-            style={{ width: PREVIEW_SIZE, height: PREVIEW_SIZE, background: `linear-gradient(${accentColor} 0 22%, ${backgroundColor} 22% 78%, ${accentColor} 78% 100%)` }}
-            onDragOver={(event) => event.preventDefault()}
-            onDrop={(event) => {
-              event.preventDefault()
-              updateLogoPositionFromPointer(event.clientX, event.clientY)
-            }}
-            onClick={(event) => updateLogoPositionFromPointer(event.clientX, event.clientY)}
-          >
-            <div
-              draggable
-              onDragStart={(event) => event.dataTransfer.setData('text/plain', 'logo')}
-              className="position-absolute bg-white bg-opacity-25 rounded p-1"
-              style={{
-                width: PREVIEW_LOGO_SIZE,
-                height: PREVIEW_LOGO_SIZE,
-                left: logoPosition.x * PREVIEW_SIZE,
-                top: logoPosition.y * PREVIEW_SIZE,
-                cursor: 'grab',
+        <>
+          <label className="form-label small mb-0">
+            Logo Size ({logoScale.toFixed(2)}x)
+            <input
+              type="range"
+              min={0.5}
+              max={2}
+              step={0.05}
+              value={logoScale}
+              className="form-range"
+              onChange={(event) => {
+                const nextScale = Number(event.target.value)
+                const nextSize = PREVIEW_LOGO_BASE_SIZE * nextScale
+                setLogoScale(nextScale)
+                setLogoPosition((position) => clampLogoPosition(position, nextSize, PREVIEW_SIZE))
               }}
+            />
+          </label>
+
+          <div>
+            <small className="text-muted d-block mb-1">Drag and drop logo position</small>
+            <div
+              ref={dragContainerRef}
+              className="position-relative border rounded"
+              style={{ width: PREVIEW_SIZE, height: PREVIEW_SIZE, background: `linear-gradient(${accentColor} 0 22%, ${backgroundColor} 22% 78%, ${accentColor} 78% 100%)` }}
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={(event) => {
+                event.preventDefault()
+                updateLogoPositionFromPointer(event.clientX, event.clientY)
+              }}
+              onClick={(event) => updateLogoPositionFromPointer(event.clientX, event.clientY)}
             >
-              <Image src={logoUrl} alt="Logo position preview" width={56} height={56} unoptimized className="w-100 h-100 object-fit-contain" />
+              <div
+                draggable
+                onDragStart={(event) => event.dataTransfer.setData('text/plain', 'logo')}
+                className="position-absolute bg-white bg-opacity-25 rounded p-1"
+                style={{
+                  width: logoPreviewSize,
+                  height: logoPreviewSize,
+                  left: logoPosition.x * PREVIEW_SIZE,
+                  top: logoPosition.y * PREVIEW_SIZE,
+                  cursor: 'grab',
+                }}
+              >
+                <Image src={logoUrl} alt="Logo position preview" width={56} height={56} unoptimized className="w-100 h-100 object-fit-contain" />
+              </div>
             </div>
           </div>
-        </div>
+        </>
       )}
 
       <div className="d-flex gap-2">
