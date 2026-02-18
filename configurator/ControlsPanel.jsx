@@ -1,5 +1,4 @@
 'use client'
-import Link from 'next/link'
 import { useState } from 'react'
 import Slider from './Slider'
 import ColorPicker from './ColorPicker'
@@ -62,6 +61,12 @@ export default function ControlsPanel({ config, renderer, scene, camera, labelSt
     document.body.removeChild(link)
   }
 
+
+  const openLabelStudio = () => {
+    if (typeof window === 'undefined') return
+    window.location.assign(labelStudioPath)
+  }
+
   const openScreenshotInNewWindow = () => {
     if (!screenshotData) return
     const newWindow = window.open()
@@ -114,7 +119,7 @@ export default function ControlsPanel({ config, renderer, scene, camera, labelSt
         </div>
         <div className="d-flex gap-2">
           <button type="button" className="btn btn-outline-light btn-sm flex-fill" onClick={() => { const labels = getSavedLabels(); setSavedLabels(labels); if (!labels.find((label) => label.id === selectedSavedLabelId)) setSelectedSavedLabelId(labels[0]?.id || '') }}>Refresh</button>
-          <Link href={labelStudioPath} className="btn btn-outline-light btn-sm flex-fill">Open Label Studio</Link>
+          <button type="button" className="btn btn-outline-light btn-sm flex-fill" onClick={openLabelStudio}>Open Label Studio</button>
         </div>
       </Card>
 
