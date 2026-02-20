@@ -42,6 +42,13 @@ export default function LabelCreator({ onApplyLabel, onSaveLabel, showSaveButton
   const [descriptionPosition, setDescriptionPosition] = useState({ x: 0.07, y: 0.46 })
   const [detailsPosition, setDetailsPosition] = useState({ x: 0.07, y: 0.67 })
 
+  const [textAreaScale, setTextAreaScale] = useState({
+    company: 1,
+    product: 1,
+    description: 1,
+    details: 1,
+  })
+
   const dragContainerRef = useRef(null)
   const activeDragTargetRef = useRef('logo')
   const detailList = useMemo(() => details.split('\n').map((line) => line.trim()).filter(Boolean), [details])
@@ -51,13 +58,19 @@ export default function LabelCreator({ onApplyLabel, onSaveLabel, showSaveButton
   const clamp = (value, min, max) => Math.max(min, Math.min(max, value))
   const maxPosition = (size, containerSize) => 1 - size / containerSize
 
+  const getElementBox = (elementKey) => {
+    const base = ELEMENT_BOX_PREVIEW[elementKey]
+    const scale = textAreaScale[elementKey] || 1
+    return { width: base.width * scale, height: base.height * scale }
+  }
+
   const clampLogoPosition = (position, size, containerSize) => ({
     x: clamp(position.x, 0, maxPosition(size, containerSize)),
     y: clamp(position.y, 0, maxPosition(size, containerSize)),
   })
 
   const clampElementPosition = (position, elementKey) => {
-    const box = ELEMENT_BOX_PREVIEW[elementKey]
+    const box = getElementBox(elementKey)
     return {
       x: clamp(position.x, 0, maxPosition(box.width, PREVIEW_SIZE)),
       y: clamp(position.y, 0, maxPosition(box.height, PREVIEW_SIZE)),
@@ -118,7 +131,7 @@ export default function LabelCreator({ onApplyLabel, onSaveLabel, showSaveButton
   const updateElementPositionFromPointer = (target, clientX, clientY) => {
     if (!dragContainerRef.current) return
     const rect = dragContainerRef.current.getBoundingClientRect()
-    const box = ELEMENT_BOX_PREVIEW[target]
+    const box = getElementBox(target)
     if (!box) return
 
     const px = (clientX - rect.left - box.width / 2) / rect.width
@@ -194,6 +207,12 @@ export default function LabelCreator({ onApplyLabel, onSaveLabel, showSaveButton
     }
 
     const drawManualText = () => {
+      const toCanvas = (value) => value * canvas.width
+      const companyBox = getElementBox('company')
+      const productBox = getElementBox('product')
+      const descriptionBox = getElementBox('description')
+      const detailsBox = getElementBox('details')
+
       const companyX = companyPosition.x * canvas.width
       const companyY = companyPosition.y * canvas.height
       const productX = productPosition.x * canvas.width
@@ -203,15 +222,20 @@ export default function LabelCreator({ onApplyLabel, onSaveLabel, showSaveButton
       const detailsX = detailsPosition.x * canvas.width
       const detailsY = detailsPosition.y * canvas.height
 
+      const companyMaxWidth = toCanvas(companyBox.width / PREVIEW_SIZE)
+      const productMaxWidth = toCanvas(productBox.width / PREVIEW_SIZE)
+      const descriptionMaxWidth = toCanvas(descriptionBox.width / PREVIEW_SIZE)
+      const detailsMaxWidth = toCanvas(detailsBox.width / PREVIEW_SIZE)
+
       ctx.fillStyle = textColor
       ctx.font = '700 74px Inter, Arial, sans-serif'
-      ctx.fillText(companyName.toUpperCase(), companyX, companyY + 70)
+      wrapText(ctx, companyName.toUpperCase(), companyX, companyY + 70, companyMaxWidth, 76, 2)
       ctx.font = '800 66px Inter, Arial, sans-serif'
-      wrapText(ctx, productName, productX, productY + 66, 620, 76, 2)
+      wrapText(ctx, productName, productX, productY + 66, productMaxWidth, 76, 2)
       ctx.font = '400 36px Inter, Arial, sans-serif'
-      wrapText(ctx, description, descriptionX, descriptionY + 44, 620, 46, 4)
+      wrapText(ctx, description, descriptionX, descriptionY + 44, descriptionMaxWidth, 46, 4)
       ctx.font = '600 32px Inter, Arial, sans-serif'
-      detailList.forEach((item, index) => ctx.fillText(`• ${item}`, detailsX, detailsY + 36 + index * 52))
+      detailList.forEach((item, index) => wrapText(ctx, `• ${item}`, detailsX, detailsY + 36 + index * 52, detailsMaxWidth, 38, 2))
     }
 
     if (textPlacementMode === 'manual') {
@@ -261,6 +285,7 @@ export default function LabelCreator({ onApplyLabel, onSaveLabel, showSaveButton
       productPosition,
       descriptionPosition,
       detailsPosition,
+      textAreaScale,
       createdAt: new Date().toISOString(),
     })
   }
@@ -293,6 +318,33 @@ export default function LabelCreator({ onApplyLabel, onSaveLabel, showSaveButton
           <option value="manual">Manual (separate drag/drop)</option>
         </select>
       </label>
+
+      {textPlacementMode === 'manual' && (
+        <div className="border rounded p-2">
+          <small className="text-muted d-block mb-2">Resize each text drag/drop area</small>
+          {Object.keys(ELEMENT_LABELS).map((key) => (
+            <label key={key} className="form-label small d-block mb-2">
+              {ELEMENT_LABELS[key]} Size ({textAreaScale[key].toFixed(2)}x)
+              <input
+                type="range"
+                min={0.7}
+                max={2}
+                step={0.05}
+                value={textAreaScale[key]}
+                className="form-range"
+                onChange={(event) => {
+                  const nextScale = Number(event.target.value)
+                  setTextAreaScale((prev) => ({ ...prev, [key]: nextScale }))
+                  if (key === 'company') setCompanyPosition((pos) => clampElementPosition(pos, key))
+                  if (key === 'product') setProductPosition((pos) => clampElementPosition(pos, key))
+                  if (key === 'description') setDescriptionPosition((pos) => clampElementPosition(pos, key))
+                  if (key === 'details') setDetailsPosition((pos) => clampElementPosition(pos, key))
+                }}
+              />
+            </label>
+          ))}
+        </div>
+      )}
 
       <input type="file" accept="image/*" className="form-control form-control-sm" onChange={(e) => handleLogoUpload(e.target.files?.[0])} />
 
@@ -363,33 +415,36 @@ export default function LabelCreator({ onApplyLabel, onSaveLabel, showSaveButton
                 <Image src={logoUrl} alt="Logo position preview" width={56} height={56} unoptimized className="w-100 h-100 object-fit-contain" />
               </div>
 
-              {textPlacementMode === 'manual' && manualBoxes.map(({ key, position }) => (
-                <div
-                  key={key}
-                  draggable
-                  onDragStart={(event) => {
-                    event.dataTransfer.setData('text/plain', key)
-                    activeDragTargetRef.current = key
-                  }}
-                  onMouseDown={() => {
-                    activeDragTargetRef.current = key
-                  }}
-                  className="position-absolute border border-white rounded px-2 py-1"
-                  style={{
-                    width: ELEMENT_BOX_PREVIEW[key].width,
-                    height: ELEMENT_BOX_PREVIEW[key].height,
-                    left: position.x * PREVIEW_SIZE,
-                    top: position.y * PREVIEW_SIZE,
-                    background: 'rgba(15, 23, 42, 0.35)',
-                    cursor: 'grab',
-                    color: '#fff',
-                    fontSize: 12,
-                  }}
-                >
-                  <div className="fw-semibold">{ELEMENT_LABELS[key]}</div>
-                  <div className="small opacity-75">Drag or click canvas to place</div>
-                </div>
-              ))}
+              {textPlacementMode === 'manual' && manualBoxes.map(({ key, position }) => {
+                const box = getElementBox(key)
+                return (
+                  <div
+                    key={key}
+                    draggable
+                    onDragStart={(event) => {
+                      event.dataTransfer.setData('text/plain', key)
+                      activeDragTargetRef.current = key
+                    }}
+                    onMouseDown={() => {
+                      activeDragTargetRef.current = key
+                    }}
+                    className="position-absolute border border-white rounded px-2 py-1"
+                    style={{
+                      width: box.width,
+                      height: box.height,
+                      left: position.x * PREVIEW_SIZE,
+                      top: position.y * PREVIEW_SIZE,
+                      background: 'rgba(15, 23, 42, 0.35)',
+                      cursor: 'grab',
+                      color: '#fff',
+                      fontSize: 12,
+                    }}
+                  >
+                    <div className="fw-semibold">{ELEMENT_LABELS[key]}</div>
+                    <div className="small opacity-75">Drag or click canvas to place</div>
+                  </div>
+                )
+              })}
             </div>
             {textPlacementMode === 'manual' && <small className="text-muted d-block mt-1">Tip: click the block first, then click preview to place that block.</small>}
           </div>
