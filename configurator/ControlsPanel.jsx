@@ -9,8 +9,9 @@ import {
   getSavedLabelsServerSnapshot,
   subscribeSavedLabels,
 } from '@/shared/labelStorage'
-
-export default function ControlsPanel({ config, renderer, scene, camera, labelStudioPath = '/label-creator' }) {
+const basePath = process.env.NEXT_PUBLIC_BASE_PATH || '';
+const studioPath = `${basePath}/label-creator`
+export default function ControlsPanel({ config, renderer, scene, camera, labelStudioPath = studioPath }) {
   const {
     bodyColor,
     setBodyColor,
