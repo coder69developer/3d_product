@@ -8,7 +8,20 @@ const PREVIEW_SIZE = 280
 const PREVIEW_LOGO_BASE_SIZE = 64
 const LOGO_BOX_BASE_SIZE = 200
 const LOGO_IMAGE_INSET = 5
-const TEXT_BOX_PREVIEW = { width: 170, height: 120 }
+
+const ELEMENT_BOX_PREVIEW = {
+  company: { width: 170, height: 44 },
+  product: { width: 190, height: 70 },
+  description: { width: 210, height: 84 },
+  details: { width: 210, height: 92 },
+}
+
+const ELEMENT_LABELS = {
+  company: 'Company',
+  product: 'Product',
+  description: 'Description',
+  details: 'Details',
+}
 
 export default function LabelCreator({ onApplyLabel, onSaveLabel, showSaveButton = false }) {
   const [companyName, setCompanyName] = useState('CleanCo')
@@ -22,8 +35,12 @@ export default function LabelCreator({ onApplyLabel, onSaveLabel, showSaveButton
   const [previewLabel, setPreviewLabel] = useState('')
   const [logoPosition, setLogoPosition] = useState({ x: 0.78, y: 0.03 })
   const [logoScale, setLogoScale] = useState(1)
-  const [textPosition, setTextPosition] = useState({ x: 0.07, y: 0.09 })
   const [textPlacementMode, setTextPlacementMode] = useState('auto')
+
+  const [companyPosition, setCompanyPosition] = useState({ x: 0.07, y: 0.06 })
+  const [productPosition, setProductPosition] = useState({ x: 0.07, y: 0.23 })
+  const [descriptionPosition, setDescriptionPosition] = useState({ x: 0.07, y: 0.46 })
+  const [detailsPosition, setDetailsPosition] = useState({ x: 0.07, y: 0.67 })
 
   const dragContainerRef = useRef(null)
   const activeDragTargetRef = useRef('logo')
@@ -39,36 +56,12 @@ export default function LabelCreator({ onApplyLabel, onSaveLabel, showSaveButton
     y: clamp(position.y, 0, maxPosition(size, containerSize)),
   })
 
-  const clampTextPosition = (position) => ({
-    x: clamp(position.x, 0, maxPosition(TEXT_BOX_PREVIEW.width, PREVIEW_SIZE)),
-    y: clamp(position.y, 0, maxPosition(TEXT_BOX_PREVIEW.height, PREVIEW_SIZE)),
-  })
-
-  const rectanglesOverlap = (a, b) => a.x < b.x + b.width && a.x + a.width > b.x && a.y < b.y + b.height && a.y + a.height > b.y
-
-  const getSafeTextPosition = (position, logoRect) => {
-    const safePosition = clampTextPosition(position)
-    if (!logoRect) return safePosition
-
-    const textRect = {
-      x: safePosition.x * PREVIEW_SIZE,
-      y: safePosition.y * PREVIEW_SIZE,
-      width: TEXT_BOX_PREVIEW.width,
-      height: TEXT_BOX_PREVIEW.height,
+  const clampElementPosition = (position, elementKey) => {
+    const box = ELEMENT_BOX_PREVIEW[elementKey]
+    return {
+      x: clamp(position.x, 0, maxPosition(box.width, PREVIEW_SIZE)),
+      y: clamp(position.y, 0, maxPosition(box.height, PREVIEW_SIZE)),
     }
-    if (!rectanglesOverlap(textRect, logoRect)) return safePosition
-
-    const candidateX = (logoRect.x + logoRect.width + 10) / PREVIEW_SIZE
-    const rightAligned = clampTextPosition({ x: candidateX, y: safePosition.y })
-    const rightRect = { ...textRect, x: rightAligned.x * PREVIEW_SIZE, y: rightAligned.y * PREVIEW_SIZE }
-    if (!rectanglesOverlap(rightRect, logoRect)) return rightAligned
-
-    const candidateY = (logoRect.y + logoRect.height + 10) / PREVIEW_SIZE
-    const belowAligned = clampTextPosition({ x: safePosition.x, y: candidateY })
-    const belowRect = { ...textRect, x: belowAligned.x * PREVIEW_SIZE, y: belowAligned.y * PREVIEW_SIZE }
-    if (!rectanglesOverlap(belowRect, logoRect)) return belowAligned
-
-    return safePosition
   }
 
   const getAutoTextLayout = () => {
@@ -103,7 +96,7 @@ export default function LabelCreator({ onApplyLabel, onSaveLabel, showSaveButton
       }
     }
 
-    return { textX, textY: 0 + textYOffset, productMaxWidth, descriptionMaxWidth }
+    return { textX, textY: textYOffset, productMaxWidth, descriptionMaxWidth }
   }
 
   const updateLogoPositionFromPointer = (clientX, clientY) => {
@@ -114,17 +107,23 @@ export default function LabelCreator({ onApplyLabel, onSaveLabel, showSaveButton
     setLogoPosition(clampLogoPosition({ x: px, y: py }, logoPreviewSize, PREVIEW_SIZE))
   }
 
-  const updateTextPositionFromPointer = (clientX, clientY) => {
+  const setPositionByTarget = (target, position) => {
+    const clampedPosition = clampElementPosition(position, target)
+    if (target === 'company') setCompanyPosition(clampedPosition)
+    if (target === 'product') setProductPosition(clampedPosition)
+    if (target === 'description') setDescriptionPosition(clampedPosition)
+    if (target === 'details') setDetailsPosition(clampedPosition)
+  }
+
+  const updateElementPositionFromPointer = (target, clientX, clientY) => {
     if (!dragContainerRef.current) return
     const rect = dragContainerRef.current.getBoundingClientRect()
-    const px = (clientX - rect.left - TEXT_BOX_PREVIEW.width / 2) / rect.width
-    const py = (clientY - rect.top - TEXT_BOX_PREVIEW.height / 2) / rect.height
+    const box = ELEMENT_BOX_PREVIEW[target]
+    if (!box) return
 
-    const logoRect = logoUrl
-      ? { x: logoPosition.x * PREVIEW_SIZE, y: logoPosition.y * PREVIEW_SIZE, width: logoPreviewSize, height: logoPreviewSize }
-      : null
-
-    setTextPosition(getSafeTextPosition({ x: px, y: py }, logoRect))
+    const px = (clientX - rect.left - box.width / 2) / rect.width
+    const py = (clientY - rect.top - box.height / 2) / rect.height
+    setPositionByTarget(target, { x: px, y: py })
   }
 
   const handleLogoUpload = (file) => {
@@ -178,44 +177,55 @@ export default function LabelCreator({ onApplyLabel, onSaveLabel, showSaveButton
     const logoBoxX = logoPosition.x * canvas.width
     const logoBoxY = logoPosition.y * canvas.height
 
-    const logoRectPreview = logoUrl
-      ? { x: logoPosition.x * PREVIEW_SIZE, y: logoPosition.y * PREVIEW_SIZE, width: logoPreviewSize, height: logoPreviewSize }
-      : null
-
-    const safeTextPosition = getSafeTextPosition(textPosition, logoRectPreview)
-
-    const manualTextLayout = {
-      textX: safeTextPosition.x * canvas.width,
-      textY: safeTextPosition.y * canvas.height,
-      productMaxWidth: 620,
-      descriptionMaxWidth: 620,
-    }
-
     const autoTextLayout = getAutoTextLayout()
-    const { textX, textY, productMaxWidth, descriptionMaxWidth } = textPlacementMode === 'manual' ? manualTextLayout : autoTextLayout
 
-    const drawText = () => {
+    const drawAutoText = () => {
+      const { textX, textY, productMaxWidth, descriptionMaxWidth } = autoTextLayout
       ctx.fillStyle = textColor
       ctx.font = '700 74px Inter, Arial, sans-serif'
       ctx.fillText(companyName.toUpperCase(), textX, 130 + textY)
       ctx.font = '800 66px Inter, Arial, sans-serif'
       const productInfo = wrapText(ctx, productName, textX, 345 + textY, productMaxWidth, 76, 2)
       ctx.font = '400 36px Inter, Arial, sans-serif'
-      const descriptionStartY = productInfo.endY + 80
-      const descriptionInfo = wrapText(ctx, description, textX, descriptionStartY, descriptionMaxWidth, 46, 4)
+      const descriptionInfo = wrapText(ctx, description, textX, productInfo.endY + 80, descriptionMaxWidth, 46, 4)
       ctx.font = '600 32px Inter, Arial, sans-serif'
       const detailStartY = Math.min(960, descriptionInfo.endY + 70)
       detailList.forEach((item, index) => ctx.fillText(`• ${item}`, textX, detailStartY + index * 52))
-      return canvas.toDataURL('image/png')
     }
 
-    if (!logoUrl) return Promise.resolve(drawText())
+    const drawManualText = () => {
+      const companyX = companyPosition.x * canvas.width
+      const companyY = companyPosition.y * canvas.height
+      const productX = productPosition.x * canvas.width
+      const productY = productPosition.y * canvas.height
+      const descriptionX = descriptionPosition.x * canvas.width
+      const descriptionY = descriptionPosition.y * canvas.height
+      const detailsX = detailsPosition.x * canvas.width
+      const detailsY = detailsPosition.y * canvas.height
+
+      ctx.fillStyle = textColor
+      ctx.font = '700 74px Inter, Arial, sans-serif'
+      ctx.fillText(companyName.toUpperCase(), companyX, companyY + 70)
+      ctx.font = '800 66px Inter, Arial, sans-serif'
+      wrapText(ctx, productName, productX, productY + 66, 620, 76, 2)
+      ctx.font = '400 36px Inter, Arial, sans-serif'
+      wrapText(ctx, description, descriptionX, descriptionY + 44, 620, 46, 4)
+      ctx.font = '600 32px Inter, Arial, sans-serif'
+      detailList.forEach((item, index) => ctx.fillText(`• ${item}`, detailsX, detailsY + 36 + index * 52))
+    }
+
+    if (textPlacementMode === 'manual') {
+      drawManualText()
+    } else {
+      drawAutoText()
+    }
+
+    if (!logoUrl) return Promise.resolve(canvas.toDataURL('image/png'))
 
     return new Promise((resolve) => {
       const logoImage = document.createElement('img')
       logoImage.onload = () => {
         const size = logoBoxSize - LOGO_IMAGE_INSET * 2
-        drawText()
         ctx.fillStyle = 'rgba(255,255,255,0.12)'
         ctx.fillRect(logoBoxX, logoBoxY, logoBoxSize, logoBoxSize)
         ctx.drawImage(logoImage, logoBoxX + LOGO_IMAGE_INSET, logoBoxY + LOGO_IMAGE_INSET, size, size)
@@ -246,11 +256,21 @@ export default function LabelCreator({ onApplyLabel, onSaveLabel, showSaveButton
       details: detailList,
       logoPosition,
       logoScale,
-      textPosition,
       textPlacementMode,
+      companyPosition,
+      productPosition,
+      descriptionPosition,
+      detailsPosition,
       createdAt: new Date().toISOString(),
     })
   }
+
+  const manualBoxes = [
+    { key: 'company', position: companyPosition },
+    { key: 'product', position: productPosition },
+    { key: 'description', position: descriptionPosition },
+    { key: 'details', position: detailsPosition },
+  ]
 
   return (
     <div className="d-flex flex-column gap-2">
@@ -270,7 +290,7 @@ export default function LabelCreator({ onApplyLabel, onSaveLabel, showSaveButton
         Text Placement Mode
         <select className="form-select form-select-sm" value={textPlacementMode} onChange={(event) => setTextPlacementMode(event.target.value)}>
           <option value="auto">Auto (previous behavior)</option>
-          <option value="manual">Manual (click/drag text area)</option>
+          <option value="manual">Manual (separate drag/drop)</option>
         </select>
       </label>
 
@@ -297,7 +317,7 @@ export default function LabelCreator({ onApplyLabel, onSaveLabel, showSaveButton
           </label>
 
           <div>
-            <small className="text-muted d-block mb-1">Drag and drop logo/text positions</small>
+            <small className="text-muted d-block mb-1">Drag logo and each text block independently</small>
             <div
               ref={dragContainerRef}
               className="position-relative border rounded"
@@ -305,15 +325,18 @@ export default function LabelCreator({ onApplyLabel, onSaveLabel, showSaveButton
               onDragOver={(event) => event.preventDefault()}
               onDrop={(event) => {
                 event.preventDefault()
-                if (activeDragTargetRef.current === 'text') {
-                  updateTextPositionFromPointer(event.clientX, event.clientY)
+                const target = activeDragTargetRef.current
+                if (target === 'logo') {
+                  updateLogoPositionFromPointer(event.clientX, event.clientY)
                   return
                 }
-                updateLogoPositionFromPointer(event.clientX, event.clientY)
+                if (textPlacementMode === 'manual') {
+                  updateElementPositionFromPointer(target, event.clientX, event.clientY)
+                }
               }}
               onClick={(event) => {
-                if (textPlacementMode === 'manual') {
-                  updateTextPositionFromPointer(event.clientX, event.clientY)
+                if (textPlacementMode === 'manual' && activeDragTargetRef.current !== 'logo') {
+                  updateElementPositionFromPointer(activeDragTargetRef.current, event.clientX, event.clientY)
                   return
                 }
                 updateLogoPositionFromPointer(event.clientX, event.clientY)
@@ -340,34 +363,35 @@ export default function LabelCreator({ onApplyLabel, onSaveLabel, showSaveButton
                 <Image src={logoUrl} alt="Logo position preview" width={56} height={56} unoptimized className="w-100 h-100 object-fit-contain" />
               </div>
 
-              {textPlacementMode === 'manual' && (
+              {textPlacementMode === 'manual' && manualBoxes.map(({ key, position }) => (
                 <div
+                  key={key}
                   draggable
                   onDragStart={(event) => {
-                    event.dataTransfer.setData('text/plain', 'text')
-                    activeDragTargetRef.current = 'text'
+                    event.dataTransfer.setData('text/plain', key)
+                    activeDragTargetRef.current = key
                   }}
                   onMouseDown={() => {
-                    activeDragTargetRef.current = 'text'
+                    activeDragTargetRef.current = key
                   }}
                   className="position-absolute border border-white rounded px-2 py-1"
                   style={{
-                    width: TEXT_BOX_PREVIEW.width,
-                    height: TEXT_BOX_PREVIEW.height,
-                    left: textPosition.x * PREVIEW_SIZE,
-                    top: textPosition.y * PREVIEW_SIZE,
+                    width: ELEMENT_BOX_PREVIEW[key].width,
+                    height: ELEMENT_BOX_PREVIEW[key].height,
+                    left: position.x * PREVIEW_SIZE,
+                    top: position.y * PREVIEW_SIZE,
                     background: 'rgba(15, 23, 42, 0.35)',
                     cursor: 'grab',
                     color: '#fff',
                     fontSize: 12,
                   }}
                 >
-                  <div className="fw-semibold">Text Area</div>
-                  <div className="small opacity-75">Click canvas or drag to position</div>
+                  <div className="fw-semibold">{ELEMENT_LABELS[key]}</div>
+                  <div className="small opacity-75">Drag or click canvas to place</div>
                 </div>
-              )}
+              ))}
             </div>
-            {textPlacementMode === 'manual' && <small className="text-muted d-block mt-1">Tip: click anywhere in preview to place text area.</small>}
+            {textPlacementMode === 'manual' && <small className="text-muted d-block mt-1">Tip: click the block first, then click preview to place that block.</small>}
           </div>
         </>
       )}
