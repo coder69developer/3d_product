@@ -1,5 +1,5 @@
 'use client'
-import { useState } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import Slider from './Slider'
 import ColorPicker from './ColorPicker'
 import ImageUploader from './ImageUploader'
@@ -29,8 +29,18 @@ export default function ControlsPanel({ config, renderer, scene, camera, labelSt
   } = config
 
   const [screenshotData, setScreenshotData] = useState(null)
-  const [savedLabels, setSavedLabels] = useState(() => getSavedLabels())
-  const [selectedSavedLabelId, setSelectedSavedLabelId] = useState(() => getSavedLabels()[0]?.id || '')
+  const [selectedSavedLabelId, setSelectedSavedLabelId] = useState('')
+  const [savedLabelsRefreshToken, setSavedLabelsRefreshToken] = useState(0)
+
+  const savedLabels = useSyncExternalStore(
+    () => () => {},
+    () => getSavedLabels(),
+    () => []
+  )
+
+  const effectiveSelectedSavedLabelId = savedLabels.find((label) => label.id === selectedSavedLabelId)
+    ? selectedSavedLabelId
+    : (savedLabels[0]?.id || '')
 
   const handleImageUpload = (file, setter) => {
     if (!file) return
@@ -39,7 +49,7 @@ export default function ControlsPanel({ config, renderer, scene, camera, labelSt
   }
 
   const applySavedLabel = () => {
-    const selected = savedLabels.find((label) => label.id === selectedSavedLabelId)
+    const selected = savedLabels.find((label) => label.id === effectiveSelectedSavedLabelId)
     if (!selected) return
     setLabelImage(selected.image)
   }
@@ -75,7 +85,7 @@ export default function ControlsPanel({ config, renderer, scene, camera, labelSt
   }
 
   return (
-    <div className="p-3 border-start overflow-auto theme-bg-primary text-light vh-100">
+    <div className="p-3 border-start overflow-auto theme-bg-primary text-light vh-100" data-saved-labels-refresh-token={savedLabelsRefreshToken}>
       <h2 className="h4 mb-4">Product Customization</h2>
 
       <Card>
@@ -109,7 +119,7 @@ export default function ControlsPanel({ config, renderer, scene, camera, labelSt
         <h3 className="h6 mb-2">Saved Labels</h3>
         <p className="small text-light-emphasis">Create and save labels in Label Studio, then apply them here.</p>
         <div className="d-flex gap-2 mb-2">
-          <select className="form-select form-select-sm" value={selectedSavedLabelId} onChange={(e) => setSelectedSavedLabelId(e.target.value)}>
+          <select className="form-select form-select-sm" value={effectiveSelectedSavedLabelId} onChange={(e) => setSelectedSavedLabelId(e.target.value)}>
             {!savedLabels.length && <option value="">No saved labels found</option>}
             {savedLabels.map((label) => (
               <option key={label.id} value={label.id}>{label.name}</option>
@@ -118,7 +128,7 @@ export default function ControlsPanel({ config, renderer, scene, camera, labelSt
           <button type="button" className="btn btn-sm btn-success" disabled={!savedLabels.length} onClick={applySavedLabel}>Apply</button>
         </div>
         <div className="d-flex gap-2">
-          <button type="button" className="btn btn-outline-light btn-sm flex-fill" onClick={() => { const labels = getSavedLabels(); setSavedLabels(labels); if (!labels.find((label) => label.id === selectedSavedLabelId)) setSelectedSavedLabelId(labels[0]?.id || '') }}>Refresh</button>
+          <button type="button" className="btn btn-outline-light btn-sm flex-fill" onClick={() => { setSavedLabelsRefreshToken((value) => value + 1); if (!savedLabels.find((label) => label.id === selectedSavedLabelId)) setSelectedSavedLabelId(savedLabels[0]?.id || '') }}>Refresh</button>
           <button type="button" className="btn btn-outline-light btn-sm flex-fill" onClick={openLabelStudio}>Open Label Studio</button>
         </div>
       </Card>

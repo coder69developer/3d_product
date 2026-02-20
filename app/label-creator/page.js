@@ -2,30 +2,36 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useSyncExternalStore } from 'react'
 import LabelCreator from '@/configurator/LabelCreator'
 import { deleteLabel, getSavedLabels, saveLabel } from '@/shared/labelStorage'
 
 export default function LabelCreatorPage() {
-  const [savedLabels, setSavedLabels] = useState(() => getSavedLabels())
   const [notice, setNotice] = useState('')
+  const [storageVersion, setStorageVersion] = useState(0)
+
+  const savedLabels = useSyncExternalStore(
+    () => () => {},
+    () => getSavedLabels(),
+    () => []
+  )
 
   const latestLabel = useMemo(() => savedLabels[0], [savedLabels])
 
   const handleSaveLabel = (label) => {
-    const updated = saveLabel(label)
-    setSavedLabels(updated)
+    saveLabel(label)
+    setStorageVersion((value) => value + 1)
     setNotice(`Saved label "${label.name}".`)
   }
 
   const handleDelete = (labelId) => {
-    const updated = deleteLabel(labelId)
-    setSavedLabels(updated)
+    deleteLabel(labelId)
+    setStorageVersion((value) => value + 1)
   }
 
   return (
     <main className="container py-4">
-      <div className="d-flex justify-content-between align-items-center mb-3">
+      <div className="d-flex justify-content-between align-items-center mb-3" data-storage-version={storageVersion}>
         <h1 className="h3 mb-0">Label Creation Studio</h1>
         <Link href="/" className="btn btn-outline-secondary btn-sm">Back to Home</Link>
       </div>
