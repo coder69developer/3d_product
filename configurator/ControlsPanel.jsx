@@ -4,7 +4,11 @@ import Slider from './Slider'
 import ColorPicker from './ColorPicker'
 import ImageUploader from './ImageUploader'
 import Switch from './Switch'
-import { getSavedLabels } from '@/shared/labelStorage'
+import {
+  getSavedLabelsSnapshot,
+  getSavedLabelsServerSnapshot,
+  subscribeSavedLabels,
+} from '@/shared/labelStorage'
 
 export default function ControlsPanel({ config, renderer, scene, camera, labelStudioPath = '/label-creator' }) {
   const {
@@ -30,12 +34,11 @@ export default function ControlsPanel({ config, renderer, scene, camera, labelSt
 
   const [screenshotData, setScreenshotData] = useState(null)
   const [selectedSavedLabelId, setSelectedSavedLabelId] = useState('')
-  const [savedLabelsRefreshToken, setSavedLabelsRefreshToken] = useState(0)
 
   const savedLabels = useSyncExternalStore(
-    () => () => {},
-    () => getSavedLabels(),
-    () => []
+    subscribeSavedLabels,
+    getSavedLabelsSnapshot,
+    getSavedLabelsServerSnapshot
   )
 
   const effectiveSelectedSavedLabelId = savedLabels.find((label) => label.id === selectedSavedLabelId)
@@ -85,7 +88,7 @@ export default function ControlsPanel({ config, renderer, scene, camera, labelSt
   }
 
   return (
-    <div className="p-3 border-start overflow-auto theme-bg-primary text-light vh-100" data-saved-labels-refresh-token={savedLabelsRefreshToken}>
+    <div className="p-3 border-start overflow-auto theme-bg-primary text-light vh-100">
       <h2 className="h4 mb-4">Product Customization</h2>
 
       <Card>
@@ -128,7 +131,7 @@ export default function ControlsPanel({ config, renderer, scene, camera, labelSt
           <button type="button" className="btn btn-sm btn-success" disabled={!savedLabels.length} onClick={applySavedLabel}>Apply</button>
         </div>
         <div className="d-flex gap-2">
-          <button type="button" className="btn btn-outline-light btn-sm flex-fill" onClick={() => { setSavedLabelsRefreshToken((value) => value + 1); if (!savedLabels.find((label) => label.id === selectedSavedLabelId)) setSelectedSavedLabelId(savedLabels[0]?.id || '') }}>Refresh</button>
+          <button type="button" className="btn btn-outline-light btn-sm flex-fill" onClick={() => { if (!savedLabels.find((label) => label.id === selectedSavedLabelId)) setSelectedSavedLabelId(savedLabels[0]?.id || '') }}>Refresh</button>
           <button type="button" className="btn btn-outline-light btn-sm flex-fill" onClick={openLabelStudio}>Open Label Studio</button>
         </div>
       </Card>
