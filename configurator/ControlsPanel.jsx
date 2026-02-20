@@ -1,12 +1,16 @@
 'use client'
-import Slider from "./Slider"
-import ColorPicker from "./ColorPicker"
-import ImageUploader from "./ImageUploader"
-import Switch from "./Switch"
-import { useState } from "react"
+import { useState, useSyncExternalStore } from 'react'
+import Slider from './Slider'
+import ColorPicker from './ColorPicker'
+import ImageUploader from './ImageUploader'
+import Switch from './Switch'
+import {
+  getSavedLabelsSnapshot,
+  getSavedLabelsServerSnapshot,
+  subscribeSavedLabels,
+} from '@/shared/labelStorage'
 
-
-export default function ControlsPanel({ config, renderer, scene, camera }) {
+export default function ControlsPanel({ config, renderer, scene, camera, labelStudioPath = '/label-creator' }) {
   const {
     bodyColor,
     setBodyColor,
@@ -25,10 +29,21 @@ export default function ControlsPanel({ config, renderer, scene, camera }) {
     logoRotation,
     setLogoRotation,
     logoScale,
-    setLogoScale
+    setLogoScale,
   } = config
 
   const [screenshotData, setScreenshotData] = useState(null)
+  const [selectedSavedLabelId, setSelectedSavedLabelId] = useState('')
+
+  const savedLabels = useSyncExternalStore(
+    subscribeSavedLabels,
+    getSavedLabelsSnapshot,
+    getSavedLabelsServerSnapshot
+  )
+
+  const effectiveSelectedSavedLabelId = savedLabels.find((label) => label.id === selectedSavedLabelId)
+    ? selectedSavedLabelId
+    : (savedLabels[0]?.id || '')
 
   const handleImageUpload = (file, setter) => {
     if (!file) return
@@ -36,22 +51,33 @@ export default function ControlsPanel({ config, renderer, scene, camera }) {
     setter(url)
   }
 
-  /** Screenshot functions */
+  const applySavedLabel = () => {
+    const selected = savedLabels.find((label) => label.id === effectiveSelectedSavedLabelId)
+    if (!selected) return
+    setLabelImage(selected.image)
+  }
+
   const captureScreenshot = () => {
     if (!renderer || !scene || !camera) return
     renderer.render(scene, camera)
-    const img = renderer.domElement.toDataURL("image/png")
+    const img = renderer.domElement.toDataURL('image/png')
     setScreenshotData(img)
   }
 
   const downloadScreenshot = () => {
     if (!screenshotData) return
-    const link = document.createElement("a")
+    const link = document.createElement('a')
     link.href = screenshotData
-    link.download = "3d-model.png"
+    link.download = '3d-model.png'
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
+  }
+
+
+  const openLabelStudio = () => {
+    if (typeof window === 'undefined') return
+    window.location.assign(labelStudioPath)
   }
 
   const openScreenshotInNewWindow = () => {
@@ -68,12 +94,7 @@ export default function ControlsPanel({ config, renderer, scene, camera }) {
       <Card>
         <div className="d-flex justify-content-between align-items-center mb-2">
           <label className="form-label mb-0">Colors</label>
-          <Switch
-            id="singleColorMode"
-            checked={singleColorMode}
-            onChange={setSingleColorMode}
-            label="Single Color"
-          />
+          <Switch id="singleColorMode" checked={singleColorMode} onChange={setSingleColorMode} label="Single Color" />
         </div>
 
         <div className="d-flex gap-3">
@@ -85,29 +106,34 @@ export default function ControlsPanel({ config, renderer, scene, camera }) {
               if (singleColorMode) setCapColor(color)
             }}
           />
-          <ColorPicker
-            label="Cap"
-            value={singleColorMode ? bodyColor : capColor}
-            onChange={setCapColor}
-            disabled={singleColorMode}
-          />
+          <ColorPicker label="Cap" value={singleColorMode ? bodyColor : capColor} onChange={setCapColor} disabled={singleColorMode} />
         </div>
       </Card>
 
       <Card>
-        <ImageUploader
-          label="Label Image"
-          value={labelImage}
-          onChange={(file) => handleImageUpload(file, setLabelImage)}
-        />
+        <ImageUploader label="Label Image" value={labelImage} onChange={(file) => handleImageUpload(file, setLabelImage)} />
       </Card>
 
       <Card>
-        <ImageUploader
-          label="Logo Image"
-          value={logoImage}
-          onChange={(file) => handleImageUpload(file, setLogoImage)}
-        />
+        <ImageUploader label="Logo Image" value={logoImage} onChange={(file) => handleImageUpload(file, setLogoImage)} />
+      </Card>
+
+      <Card>
+        <h3 className="h6 mb-2">Saved Labels</h3>
+        <p className="small text-light-emphasis">Create and save labels in Label Studio, then apply them here.</p>
+        <div className="d-flex gap-2 mb-2">
+          <select className="form-select form-select-sm" value={effectiveSelectedSavedLabelId} onChange={(e) => setSelectedSavedLabelId(e.target.value)}>
+            {!savedLabels.length && <option value="">No saved labels found</option>}
+            {savedLabels.map((label) => (
+              <option key={label.id} value={label.id}>{label.name}</option>
+            ))}
+          </select>
+          <button type="button" className="btn btn-sm btn-success" disabled={!savedLabels.length} onClick={applySavedLabel}>Apply</button>
+        </div>
+        <div className="d-flex gap-2">
+          <button type="button" className="btn btn-outline-light btn-sm flex-fill" onClick={() => { if (!savedLabels.find((label) => label.id === selectedSavedLabelId)) setSelectedSavedLabelId(savedLabels[0]?.id || '') }}>Refresh</button>
+          <button type="button" className="btn btn-outline-light btn-sm flex-fill" onClick={openLabelStudio}>Open Label Studio</button>
+        </div>
       </Card>
 
       <Card>
@@ -120,41 +146,18 @@ export default function ControlsPanel({ config, renderer, scene, camera }) {
         <Slider label="Scale Z" min={0.1} max={3} step={0.01} value={logoScale[2]} onChange={(v) => setLogoScale([logoScale[0], logoScale[1], v])} />
       </Card>
 
-      {/* --- NEW Screenshot / Export Card --- */}
       <Card>
         <h3 className="h6 mb-2">Export Options</h3>
         <div className="d-flex flex-column gap-2">
-          <button className="btn btn-primary" onClick={captureScreenshot}>
-            📸 Capture Screenshot
-          </button>
-
-          <button
-            className="btn btn-secondary"
-            onClick={downloadScreenshot}
-            disabled={!screenshotData}
-          >
-            💾 Download Image
-          </button>
-
-          <button
-            className="btn btn-secondary"
-            onClick={openScreenshotInNewWindow}
-            disabled={!screenshotData}
-          >
-            🖨️ Open in New Window
-          </button>
+          <button className="btn btn-primary" onClick={captureScreenshot}>📸 Capture Screenshot</button>
+          <button className="btn btn-secondary" onClick={downloadScreenshot} disabled={!screenshotData}>💾 Download Image</button>
+          <button className="btn btn-secondary" onClick={openScreenshotInNewWindow} disabled={!screenshotData}>🖨️ Open in New Window</button>
         </div>
       </Card>
-
     </div>
   )
 }
 
-/** Card wrapper */
 function Card({ children }) {
-  return (
-    <div className="card bg-secondary text-light mb-3 p-3 shadow-sm">
-      {children}
-    </div>
-  )
+  return <div className="card bg-secondary text-light mb-3 p-3 shadow-sm">{children}</div>
 }
