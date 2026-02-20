@@ -3,28 +3,31 @@ import Link from "next/link";
 export default function Home() {
   const models = ['bottle', 'spray-bottle', 'container', 'spray-can']
   return (
-    <div className="min-h-screen m-auto flex flex-col items-center justify-center bg-gray-100 space-y-6">
-      <h1 className="text-3xl font-bold text-gray-800">3D Product Configurator</h1>
-      <p className="text-gray-600">Choose a model to start customizing:</p>
+    <div className="container my-5">
+      <div className="p-5 text-center bg-body-tertiary rounded-3">
+        <h1 className="text-body-emphasis">3D Product Configurator</h1>
+        <p className="col-lg-8 mx-auto fs-5 text-muted">Choose a model to start customizing:</p>
 
-      <div className="flex flex-wrap gap-4">
-        {models.map((model) => (
-          <Link
-            key={model}
-            href={`/configurator/${model}`}
-            className="px-4 py-2 bg-teal-500 text-white rounded-lg hover:bg-teal-600 transition"
-          >
-            {model.replace('-', ' ')}
-          </Link>
-        ))}
+        <div className="d-grid gap-5 d-sm-flex justify-content-sm-center">
+          {models.map((model) => (
+            <Link
+              key={model}
+              href={`/configurator/${model}`}
+              className="btn btn-primary btn-lg px-4 gap-3"
+            >
+              {model.replace('-', ' ')}
+            </Link>
+          ))}
+        </div>
+
+        <Link
+          href="/label-creator"
+          className="btn btn-outline-success my-4"
+        >
+          Open Label Studio
+        </Link>
       </div>
-
-      <Link
-        href="/label-creator"
-        className="px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-800 transition"
-      >
-        Open Label Studio
-      </Link>
-    </div>
+      </div>
+     
   );
 }
